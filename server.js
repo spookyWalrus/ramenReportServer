@@ -1,7 +1,9 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const knex = require('knex');
 const bcrypt = require('bcrypt');
 const cors = require('cors');
+
 
 
 const saltRounds = 10;
@@ -30,6 +32,31 @@ const dataBase = {
 	]
 }
 
+const db = knex({
+  client: 'pg',
+  connection: {
+				    host : '127.0.0.1',
+				    user : 'zen',
+				    port: 5432,
+				    password : '',
+				    database : 'ramenDB'
+				  }
+
+  // connection: {
+  // 		connectionString: process.env.DATABASE_URL,
+// 	    host : process.env.HOSTNAME,
+// 	    port : 5432,
+// 	    user : process.env.USERNAME,
+// 	    password : process.env.DB_PASSWORD,
+// 	    database : process.env.DATABASE,
+// 			ssl: {rejectUnauthorized: false}
+// 	  }
+});
+db.select('*').from('users').then(data =>{
+			console.log(data);
+	});
+
+
 app.listen(3000, () =>{ // listen response when connected
 	console.log('app is running on port 3000');
 })
@@ -53,22 +80,27 @@ app.post('/login',(req,res)=>{// POST request to login
 			});
 			if (!found){
 				res.status(400).json('error logging in');
+
 			}
 		});
 
 app.post('/register',(req,res)=>{ // register new user
 			const {user, email, password} = req.body;
-			dataBase.users.push({
-				id: '125',
-				user: user,
+			db('users').insert({
+				name: user,
 				email: email,
-				password: password,
-				entries: 0,
-				joined: new Date()
-			});
+				password: password
+			}).then(console.log);
+			// dataBase.users.push({
+			// 	id: '125',
+			// 	user: user,
+			// 	email: email,
+			// 	password: password,
+			// 	entries: 0,
+			// 	joined: new Date()
+			// });
 			res.json(
-				dataBase.users[dataBase.users.length-1].user,
-			"registration succesful from server"
+				dataBase.users[dataBase.users.length-1].user
 			);
 		})
 
