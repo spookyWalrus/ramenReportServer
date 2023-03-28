@@ -53,7 +53,7 @@ const db = knex({
 // 	  }
 });
 db.select('*').from('users').then(data =>{
-			console.log(data);
+			console.log('connected to ramenDB!');
 	});
 
 
@@ -62,75 +62,120 @@ app.listen(3000, () =>{ // listen response when connected
 })
 
 app.get('/',(req,res)=>{ //basic get response to test
-	res.send(dataBase.users);
+	res.send('success');
 })
 
 app.post('/login',(req,res)=>{// POST request to login
-			let found = false;
-			dataBase.users.forEach(user => {
-				if((req.body.user === user.user) &&
-				req.body.password === user.password){
-					found = true;
-					// res.json('success');
-					let name = dataBase.users[0].user;
-					let count = dataBase.users[0].entries;
-					let data = {name,count};
-					res.json(data);
-				}
-			});
-			if (!found){
-				res.status(400).json('error logging in');
-
+	db.select('email','hash').from('login') // target db with specific elements
+		.where('email','=',req.body.email) // check if user input matches db data 
+		.then(data =>{
+			const isValid = bcrypt.compareSync(req.body.password, data[0].hash); 	// compare user pw with database pw
+			if(isValid){ 	
+				return db.select('*').from('users') 	
+					.where('email','=',req.body.email) 
+					.then(user =>{
+						res.json(user[0])  	
+					})
+					.catch(err => res.status(400).json('unable to get user'))
+			}else{
+				res.status(400).json('wrong credentials');
 			}
-		});
+		})
+		.catch(err => res.status(400).json('error'))
+})
+		
 
 app.post('/register',(req,res)=>{ // register new user
-			const {user, email, password} = req.body;
-			db('users').insert({
-				name: user,
-				email: email,
-				password: password
-			}).then(console.log);
-			// dataBase.users.push({
-			// 	id: '125',
-			// 	user: user,
-			// 	email: email,
-			// 	password: password,
-			// 	entries: 0,
-			// 	joined: new Date()
-			// });
-			res.json(
-				dataBase.users[dataBase.users.length-1].user
-			);
-		})
+			const {name, email, password} = req.body;
+			const hash = bcrypt.hashSync(password, saltRounds);
+			db.transaction((trx)=>{
+				trx.insert({
+					hash:hash,
+					email:email
+				})
+				.into('login')
+				.returning('email')
+				.then(loginEmail =>{
+					return trx('users')
+						.returning('*')
+						.insert({
+							name: name,
+							email: loginEmail[0].email,
+							joined: new Date()
+						})
+						.then(user =>{
+							res.json(user[0]);
+						})
+				})
+				.then(trx.commit)
+				.catch(trx.rollback)
+			})
+			.catch(err =>{res.status(400).json('unable to register')})
+})
 
 // look up user by id, return user info
 app.get('/profile/:id',(req,res)=>{ 
 			const { id } = req.params;
 			let found = false;
-			dataBase.users.forEach(user => {
-				if(user.id === id){
-					found = true;
-					res.json(user);
-				}
-			});
-			if (!found){
-				res.status(400).json('not found');
-			}
+			db.select('*').from('users')
+				.where({
+					id: id
+				})
+				.then(user =>{
+					if(user.length){
+						res.json(user[0])
+						console.log(user)
+					}else{
+						res.status(400).json('not found');
+					}
+				})
 		});
 
 // send in a report, increment entry amount, returns user entry count`  Use to be '/image' in smartbrain app
 app.post('/report',(req,res)=>{ 
-			const { id } = req.body;
-			let found = false;
-			dataBase.users.forEach(user => {
-				if(user.id === id){
-					found = true;
-					user.entries++;
-					return res.json(user);
-				}
-			});
-			if (!found){
-				res.status(400).json('not found');
-			}
+			// const {email,logstat,comments} = req.body;
+			// db('users').where('email','=',email)
+			// .increment('entries',1)
+			// .returning('*')
+			// .then(data =>{
+			// 	res.json(data[0])
+			// })
+			const {email,resto,noodles,soup,toppings,experience,comments} = req.body;
+			
+				// db('ratings').insert({
+				// 	email: email,
+				// 	resto: resto,
+				// 	noodles: noodles,
+				// 	soup: soup,
+				// 	toppings: toppings,
+				// 	experience: experience,
+				// 	comments: comments
+				// })
+				// .then(console.log)
+				db.transaction((trx)=>{
+					trx.insert({
+						email: email,
+						resto: resto,
+						noodles: noodles,
+						soup: soup,
+						toppings: toppings,
+						experience: experience,
+						comments: comments
+					}).where('email','=',email)
+					.into('ratings')
+					.returning('email')
+					.then(goData =>{
+						return trx('users').where('email','=',email)
+							.increment('entries',1)
+							.returning('*')
+					})
+					.then(user =>{
+								// console.log(user);
+								return res.json(user[0]);
+					})
+					.then(trx.commit)
+					.catch(trx.rollback)
+			})
+			.catch(err=> res.status(400).json('unable to save to db'))
 		});
+
