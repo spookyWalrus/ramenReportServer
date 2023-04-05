@@ -40,7 +40,8 @@ const db = knex({
 				    port: 5432,
 				    password : '',
 				    database : 'ramenDB'
-				  }
+				  },
+  debug: true
 
   // connection: {
   // 		connectionString: process.env.DATABASE_URL,
@@ -131,27 +132,10 @@ app.get('/profile/:id',(req,res)=>{
 				})
 		});
 
+
 // send in a report, increment entry amount, returns user entry count`  Use to be '/image' in smartbrain app
 app.post('/report',(req,res)=>{ 
-			// const {email,logstat,comments} = req.body;
-			// db('users').where('email','=',email)
-			// .increment('entries',1)
-			// .returning('*')
-			// .then(data =>{
-			// 	res.json(data[0])
-			// })
 			const {email,resto,noodles,soup,toppings,experience,comments} = req.body;
-			
-				// db('ratings').insert({
-				// 	email: email,
-				// 	resto: resto,
-				// 	noodles: noodles,
-				// 	soup: soup,
-				// 	toppings: toppings,
-				// 	experience: experience,
-				// 	comments: comments
-				// })
-				// .then(console.log)
 				db.transaction((trx)=>{
 					trx.insert({
 						email: email,
@@ -179,3 +163,31 @@ app.post('/report',(req,res)=>{
 			.catch(err=> res.status(400).json('unable to save to db'))
 		});
 
+// insert JSON data into DB
+app.post('/json2db',(req,res)=>{ 
+			const {resto,postal,address,city,province,country,googleurl,long,lat,website} = req.body;
+				db.transaction((trx)=>{
+					trx.insert({
+						resto: resto,
+			      	postal: postal,
+			      	address: address,
+			      	city: city,
+			      	province: province,
+			      	country: country,
+			      	googleurl: googleurl,
+			      	// longitude: long,
+			      	// latitude: lat,
+			      	website: website
+					})
+					// .where('email','=',email)
+					.into('restaurants')
+					.returning('*')
+					.then(item =>{
+								console.log(item);
+								return res.json(item);
+					})
+					.then(trx.commit)
+					.catch(trx.rollback)
+				})
+				.catch(err=> res.status(400).json(err))
+		});
