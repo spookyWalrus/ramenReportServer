@@ -191,3 +191,21 @@ app.post('/json2db',(req,res)=>{
 				})
 				.catch(err=> res.status(400).json(err))
 		});
+
+// get ratings data
+app.post('/ratings',(req,res)=>{
+	// console.log(req.body);
+	let data = req.body;
+	let user = data[data.length-1];
+	let userMail = user.email;
+	console.log('checking this user email: ',userMail);
+	db.select('email').from('users') // target db with specific elements
+		.where('email','=',userMail) // check if user exists in db
+		.then(data =>{
+				return db.select('*').from('ratings') 	
+		})
+		.then(data =>{
+			res.json(data)  	
+		})
+		.catch(err => res.status(400).json('error'))
+})
