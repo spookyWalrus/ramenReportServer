@@ -1,3 +1,4 @@
-# ramenReportServer
+# The Ramen ReportServer
 
-The brains for the ramen Report app!
+## The back-end for the Ramen Report app. 
+### Implements NodeJS, ExpressJS, KnectJS, PostgreSQL and connects to the GoogleMaps API.
