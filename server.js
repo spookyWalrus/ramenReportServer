@@ -169,7 +169,7 @@ app.post('/report',(req,res)=>{
 // check if JSON data already exists, insert if not exist
 app.post('/jsonCheck',(req,res)=>{
 	const {resto,address,city,province,country,postal,ratingtotal,latlng,price,rating,} = req.body;
-	
+
 	db('restaurants')
 	.where('resto',resto)
 	.first()
@@ -191,7 +191,7 @@ app.post('/jsonCheck',(req,res)=>{
 				.then(()=>{
 					console.log(`Inserted ${resto} into table`);
 				}).catch(error =>{
-					console.log("Error inerting");
+					console.log("Error inserting");
 				})
 			}else{
 				console.log(`${resto} already exists`);
