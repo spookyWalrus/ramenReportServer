@@ -4,6 +4,9 @@ const knex = require('knex');
 const bcrypt = require('bcrypt');
 const cors = require('cors');
 
+const mkdirp = require('mkdirp');
+const fs = require('fs');
+const getDirName = require('path').dirname;
 
 
 const saltRounds = 10;
@@ -11,8 +14,8 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-const dataBase = {
-	users:[
+const dataBase = [
+	
 		{
 				id: '321',
 				user: 'Chic',
@@ -29,8 +32,8 @@ const dataBase = {
 				entries: 0,
 				joined: new Date()
 			}
-	]
-}
+	
+];
 
 const db = knex({
   client: 'pg',
@@ -163,21 +166,67 @@ app.post('/report',(req,res)=>{
 			.catch(err=> res.status(400).json('unable to save to db'))
 		});
 
+// check if JSON data already exists, insert if not exist
+app.post('/jsonCheck',(req,res)=>{
+	const {resto,address,city,province,country,postal,ratingtotal,latlng,price,rating,} = req.body;
+	
+	db('restaurants')
+	.where('resto',resto)
+	.first()
+	.then(existingName =>{
+		if(!existingName){
+			return db('restaurants')
+				.insert({
+						resto: resto,
+		      	address: address,
+		      	city: city,
+		      	province: province,
+		      	country: country,
+		      	postal: postal,
+		      	ratingtotal: ratingtotal,
+		      	latlng: latlng,
+		      	price: price,
+		      	rating: rating,
+				})
+				.then(()=>{
+					console.log(`Inserted ${resto} into table`);
+				}).catch(error =>{
+					console.log("Error inerting");
+				})
+			}else{
+				console.log(`${resto} already exists`);
+			}
+	})
+	.catch(err=>{		
+		console.error(`Error checking for ${resto}: ${err}`);
+	});
+})
+
 // insert JSON data into DB
 app.post('/json2db',(req,res)=>{ 
-			const {resto,postal,address,city,province,country,googleurl,long,lat,website} = req.body;
+			const {resto,
+							address,
+							city,
+							province,
+							country,
+							postal,
+							ratingtotal,
+							latlng,
+							price,
+							rating,
+						} = req.body;
 				db.transaction((trx)=>{
 					trx.insert({
 						resto: resto,
-			      	postal: postal,
-			      	address: address,
-			      	city: city,
-			      	province: province,
-			      	country: country,
-			      	googleurl: googleurl,
-			      	// longitude: long,
-			      	// latitude: lat,
-			      	website: website
+		      	address: address,
+		      	city: city,
+		      	province: province,
+		      	country: country,
+		      	postal: postal,
+		      	ratingtotal: ratingtotal,
+		      	latlng: latlng,
+		      	price: price,
+		      	rating: rating,
 					})
 					// .where('email','=',email)
 					.into('restaurants')
@@ -189,7 +238,10 @@ app.post('/json2db',(req,res)=>{
 					.then(trx.commit)
 					.catch(trx.rollback)
 				})
-				.catch(err=> res.status(400).json(err))
+				.catch(err=> 
+					// res.status(400).json(err)
+					console.error(err)
+				);
 		});
 
 // get ratings data
@@ -208,4 +260,16 @@ app.post('/ratings',(req,res)=>{
 			res.json(data)  	
 		})
 		.catch(err => res.status(400).json('error'))
+})
+
+//write a json file
+app.post('/makejson',(req,res)=>{
+	let data = req.body;
+	fs.writeFile('../restoFile.json', JSON.stringify(data), (err) => {
+    if (err){ return console.log('Error writing json file:', err);}
+	})
+	.then(data=>{
+
+	})
+	.catch(err => res.status(500).json(err))
 })
