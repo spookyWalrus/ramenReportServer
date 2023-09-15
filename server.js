@@ -14,27 +14,6 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-const dataBase = [
-	
-		{
-				id: '321',
-				user: 'Chic',
-				email: 'chic@mail',
-				password: '9876',
-				entries: 0,
-				joined: new Date()
-			},
-			{
-				id: '123',
-				user: 'Dude',
-				email: 'dude@mail',
-				password: '1234',
-				entries: 0,
-				joined: new Date()
-			}
-	
-];
-
 const db = knex({
   client: 'pg',
   connection: {
@@ -55,6 +34,7 @@ const db = knex({
 // 	    database : process.env.DATABASE,
 // 			ssl: {rejectUnauthorized: false}
 // 	  }
+
 });
 db.select('*').from('users').then(data =>{
 			console.log('connected to ramenDB!');
@@ -166,42 +146,6 @@ app.post('/report',(req,res)=>{
 			.catch(err=> res.status(400).json('unable to save to db'))
 		});
 
-// check if JSON data already exists, insert if not exist
-app.post('/jsonCheck',(req,res)=>{
-	const {resto,address,city,province,country,postal,ratingtotal,latlng,price,rating,} = req.body;
-
-	db('restaurants')
-	.where('resto',resto)
-	.first()
-	.then(existingName =>{
-		if(!existingName){
-			return db('restaurants')
-				.insert({
-						resto: resto,
-		      	address: address,
-		      	city: city,
-		      	province: province,
-		      	country: country,
-		      	postal: postal,
-		      	ratingtotal: ratingtotal,
-		      	latlng: latlng,
-		      	price: price,
-		      	rating: rating,
-				})
-				.then(()=>{
-					console.log(`Inserted ${resto} into table`);
-				}).catch(error =>{
-					console.log("Error inserting");
-				})
-			}else{
-				console.log(`${resto} already exists`);
-			}
-	})
-	.catch(err=>{		
-		console.error(`Error checking for ${resto}: ${err}`);
-	});
-})
-
 // insert JSON data into DB
 app.post('/json2db',(req,res)=>{ 
 			const {resto,
@@ -228,7 +172,7 @@ app.post('/json2db',(req,res)=>{
 		      	price: price,
 		      	rating: rating,
 					})
-					// .where('email','=',email)
+					.where('email','=',email)
 					.into('restaurants')
 					.returning('*')
 					.then(item =>{
@@ -260,16 +204,4 @@ app.post('/ratings',(req,res)=>{
 			res.json(data)  	
 		})
 		.catch(err => res.status(400).json('error'))
-})
-
-//write a json file
-app.post('/makejson',(req,res)=>{
-	let data = req.body;
-	fs.writeFile('../restoFile.json', JSON.stringify(data), (err) => {
-    if (err){ return console.log('Error writing json file:', err);}
-	})
-	.then(data=>{
-
-	})
-	.catch(err => res.status(500).json(err))
 })
