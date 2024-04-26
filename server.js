@@ -42,7 +42,7 @@ db.select("*")
     console.log("connected to ramenDB!");
   });
 
-app.listen(3000, () => {
+app.listen(5432, () => {
   // listen response when connected
   console.log("app is running on port 5432");
 });
