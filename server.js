@@ -8,6 +8,8 @@ const mkdirp = require("mkdirp");
 const fs = require("fs");
 const getDirName = require("path").dirname;
 
+require("dotenv").config();
+
 const saltRounds = 10;
 const app = express();
 app.use(cors());
@@ -15,13 +17,13 @@ app.use(bodyParser.json());
 
 const db = knex({
   client: "pg",
-  //   connection: {
-  // 				    host : '127.0.0.1',
-  // 				    user : 'zen',
-  // 				    port: 5432,
-  // 				    password : '',
-  // 				    database : 'ramenDB'
-  // 				  }
+  // connection: {
+  //   host: "127.0.0.1",
+  //   user: "zen",
+  //   port: 5432,
+  //   password: "",
+  //   database: "ramenDB",
+  // },
   // debug: true
 
   connection: {
@@ -33,6 +35,7 @@ const db = knex({
     database: process.env.DATABASE,
     ssl: { rejectUnauthorized: false },
   },
+  debug: true,
 });
 
 //  server functions
