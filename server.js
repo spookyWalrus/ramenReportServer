@@ -8,7 +8,7 @@ const mkdirp = require("mkdirp");
 const fs = require("fs");
 const getDirName = require("path").dirname;
 
-require("dotenv").config();
+// require("dotenv").config();
 
 const saltRounds = 10;
 const app = express();
@@ -17,15 +17,6 @@ app.use(bodyParser.json());
 
 const db = knex({
   client: "pg",
-  // connection: {
-  //   host: "127.0.0.1",
-  //   user: "zen",
-  //   port: 5432,
-  //   password: "",
-  //   database: "ramenDB",
-  // },
-  // debug: true
-
   connection: {
     connectionString: process.env.DATABASE_URL,
     host: process.env.HOSTNAME,
@@ -45,14 +36,25 @@ db.select("*")
     console.log("connected to ramenDB!");
   });
 
-app.listen(5432, () => {
+var listener = app.listen(3001, () => {
   // listen response when connected
-  console.log("app is running on port 5432");
+  console.log("Listening on port " + listener.address().port);
+  // console.log("backend running on port 3001");
 });
 
 app.get("/", (req, res) => {
   //basic get response to test
   res.send("success");
+});
+
+app.use(function (req, res, next) {
+  res.header(
+    "Access-Control-Allow-Origin",
+    "https://nimble-shortbread-540549.netlify.app"
+  );
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  res.header("Access-Control-Allow-Methods", "POST, OPTIONS");
+  next();
 });
 
 app.post("/login", (req, res) => {
@@ -198,17 +200,14 @@ app.post("/json2db", (req, res) => {
       })
       .then(trx.commit)
       .catch(trx.rollback);
-  }).catch((err) =>
-    // res.status(400).json(err)
-    console.error(err)
-  );
+  }).catch((err) => console.error(err));
 });
 
 // get ratings data
 app.post("/ratings", (req, res) => {
-  // console.log(req.body);
   let data = req.body;
-  let user = data[data.length - 1];
+  let user = data[1];
+  let city = data[0];
   let userMail = user.email;
   console.log("checking this user email: ", userMail);
   db.select("email")
@@ -216,9 +215,14 @@ app.post("/ratings", (req, res) => {
     .where("email", "=", userMail) // check if user exists in db
     .then((data) => {
       return db.select("*").from("ratings");
+      // .where("city", "=", city);
     })
     .then((data) => {
       res.json(data);
     })
-    .catch((err) => res.status(400).json("error"));
+    .catch((err) => {
+      if (res.status(400)) {
+        console.log("error catch: ", err, data);
+      }
+    });
 });

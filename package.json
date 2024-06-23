@@ -2,7 +2,7 @@
   "name": "ramenreportserver",
   "version": "1.0.0",
   "description": "The brains for the ramen Report app",
-  "main": "index.js",
+  "main": "server.js",
   "dependencies": {
     "bcrypt": "5.0.0",
     "cors": "^2.8.5",
@@ -10,7 +10,9 @@
     "knex": "^2.4.2",
     "pg": "^8.10.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
