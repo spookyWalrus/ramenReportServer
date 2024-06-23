@@ -12,7 +12,13 @@ const getDirName = require("path").dirname;
 
 const saltRounds = 10;
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: "https://nimble-shortbread-540549.netlify.app",
+    methods: "POST,OPTIONS",
+    allowedHeaders: "Content-Type",
+  })
+);
 app.use(bodyParser.json());
 
 const db = knex({
@@ -45,16 +51,6 @@ var listener = app.listen(3001, () => {
 app.get("/", (req, res) => {
   //basic get response to test
   res.send("success");
-});
-
-app.use(function (req, res, next) {
-  res.header(
-    "Access-Control-Allow-Origin",
-    "https://nimble-shortbread-540549.netlify.app"
-  );
-  res.header("Access-Control-Allow-Headers", "Content-Type");
-  res.header("Access-Control-Allow-Methods", "POST, OPTIONS");
-  next();
 });
 
 app.post("/login", (req, res) => {
